@@ -7,7 +7,7 @@ from botocore.exceptions import ClientError
 from typing import Optional
 
 from strands import Agent, tool
-from strands.models import BedrockModel
+from strands.models.openai import OpenAIModel
 from strands_tools import (
     agent_graph, calculator, cron, current_time, editor, environment, 
     file_read, file_write, generate_image, http_request, image_reader, journal, 
@@ -233,18 +233,42 @@ The user has the ability to modify your set of built-in tools. Every time your t
 """
 
 # Global variables
-MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
-REGION = "us-west-2"
+# OpenRouter is OpenAI-compatible.
+MODEL_ID = os.environ.get("OPENROUTER_MODEL", "anthropic/claude-3.5-sonnet")
+BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 MAX_TOKENS = 1000
 TEMPERATURE = 0.3
 TOP_P = 0.9
 
-BEDROCK_MODEL = BedrockModel(
+def _openai_client_args(base_url: str) -> dict:
+    api_key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("Missing OPENROUTER_API_KEY (or OPENAI_API_KEY)")
+
+    headers = {}
+    # Optional but recommended by OpenRouter.
+    if os.environ.get("OPENROUTER_SITE_URL"):
+        headers["HTTP-Referer"] = os.environ["OPENROUTER_SITE_URL"]
+    if os.environ.get("OPENROUTER_APP_NAME"):
+        headers["X-Title"] = os.environ["OPENROUTER_APP_NAME"]
+
+    client_args = {
+        "api_key": api_key,
+        "base_url": base_url,
+    }
+    if headers:
+        client_args["default_headers"] = headers
+    return client_args
+
+
+OPENAI_MODEL = OpenAIModel(
+    client_args=_openai_client_args(BASE_URL),
     model_id=MODEL_ID,
-    region_name=REGION,
-    temperature=TEMPERATURE,
-    max_tokens=MAX_TOKENS,
-    top_p=TOP_P,
+    params={
+        "max_tokens": MAX_TOKENS,
+        "temperature": TEMPERATURE,
+        "top_p": TOP_P,
+    },
 )
 
 # FastAPI app setup
@@ -256,7 +280,7 @@ app = FastAPI()
 def get_conversations(userId: str):
     try:
         agent = StrandsPlaygroundAgent(
-            model=BEDROCK_MODEL,
+            model=OPENAI_MODEL,
             system_prompt=SYSTEM_PROMPT,
             user_id=userId
         )
@@ -269,7 +293,7 @@ def get_conversations(userId: str):
 def get_agent_response(request: PromptRequest):
     try:
         agent = StrandsPlaygroundAgent(
-            model=BEDROCK_MODEL,
+            model=OPENAI_MODEL,
             system_prompt=SYSTEM_PROMPT,
             user_id=request.userId
         )
@@ -301,22 +325,21 @@ def set_system_prompt(request: SystemPromptRequest):
 # Model settings endpoints
 @app.get("/model_settings")
 def get_model_settings():
-    global BEDROCK_MODEL
-    config = BEDROCK_MODEL.get_config()
     return {
         "modelId": MODEL_ID,
-        "region": REGION,
+        "region": BASE_URL,
         "maxTokens": MAX_TOKENS,
         "temperature": TEMPERATURE,
-        "topP": TOP_P
+        "topP": TOP_P,
     }
 
 @app.post("/model_settings")
 def set_model_settings(request: ModelSettingsRequest):
-    global BEDROCK_MODEL, MODEL_ID, REGION, MAX_TOKENS, TEMPERATURE, TOP_P
+    global OPENAI_MODEL, MODEL_ID, BASE_URL, MAX_TOKENS, TEMPERATURE, TOP_P
     logger.debug(f"received the following when updated the model: {request}")    
    
     # Create a parameters dictionary with only non-None values
+    # Note: UI field is named `region` but we treat it as OpenAI base_url.
     model_params = {
         "model_id": request.modelId,
     }
@@ -340,20 +363,29 @@ def set_model_settings(request: ModelSettingsRequest):
     
     logger.debug(f"model settings parmaeters passed: {model_params}")
 
-    # Update the bedrock model with new settings
-    BEDROCK_MODEL = BedrockModel(**model_params, region_name=request.region)
-    REGION = request.region
-    MAX_TOKENS = request.maxTokens
-    TEMPERATURE = request.temperature
-    TOP_P = request.topP
+    # Update OpenAI/OpenRouter model with new settings
     MODEL_ID = request.modelId
+    BASE_URL = request.region
+    MAX_TOKENS = request.maxTokens if request.maxTokens is not None else MAX_TOKENS
+    TEMPERATURE = request.temperature if request.temperature is not None else TEMPERATURE
+    TOP_P = request.topP if request.topP is not None else TOP_P
+
+    OPENAI_MODEL = OpenAIModel(
+        client_args=_openai_client_args(BASE_URL),
+        model_id=MODEL_ID,
+        params={
+            "max_tokens": MAX_TOKENS,
+            "temperature": TEMPERATURE,
+            "top_p": TOP_P,
+        },
+    )
 
     return {
-        "modelId": request.modelId,
-        "region": request.region,
-        "maxTokens": request.maxTokens,
-        "temperature": request.temperature,
-        "topP": request.topP
+        "modelId": MODEL_ID,
+        "region": BASE_URL,
+        "maxTokens": MAX_TOKENS,
+        "temperature": TEMPERATURE,
+        "topP": TOP_P,
     }
 
 # Tools management endpoints
