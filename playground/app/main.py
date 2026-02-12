@@ -6,6 +6,11 @@ import boto3
 from botocore.exceptions import ClientError
 from typing import Optional
 
+from dotenv import load_dotenv
+
+# Load environment variables from .env (if present)
+load_dotenv()
+
 from strands import Agent, tool
 from strands.models.openai import OpenAIModel
 from strands_tools import (
