@@ -16,3 +16,5 @@ venv/
 .DS_Store
 .prompt
 .kiro
+playground/app/.env
+playground/app/sessions/
