@@ -4,8 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatMessages = document.getElementById('chatMessages');
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendButton');
-    const userIdInput = document.getElementById('userId');
-    const setUserIdButton = document.getElementById('setUserId');
+    // user/session controls removed
     const systemPromptInput = document.getElementById('systemPrompt');
     const setSystemPromptButton = document.getElementById('setSystemPrompt');
     const modelIdInput = document.getElementById('modelId');
@@ -23,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const MODEL_SETTINGS_ENDPOINT = `${API_BASE_URL}/model_settings`;
     
     // State
-    let userId = userIdInput.value || 'user1';
+    let userId = 'user1';
     let isProcessing = false;
     
     // Initialize chat, system prompt, and model settings
@@ -41,15 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     
-    setUserIdButton.addEventListener('click', () => {
-        const newUserId = userIdInput.value.trim();
-        if (newUserId) {
-            userId = newUserId;
-            loadConversation();
-        } else {
-            showError('Please enter a valid User ID');
-        }
-    });
+    // User/session switching removed; fixed userId = 'user1'
     
     setSystemPromptButton.addEventListener('click', async () => {
         const systemPrompt = systemPromptInput.value.trim();
