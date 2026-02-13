@@ -135,8 +135,8 @@ def default_selected_tools() -> list[Any]:
     # Keep defaults conservative. Note: use_openrouter_llm is created at runtime via
     # make_use_openrouter_llm() and registered in app_factory, so it cannot be listed here.
     return [
-        calculator,
-        http_request,
-        use_aws,
-        weather_forecast,
+        calculator, cron, current_time, editor, environment,
+        http_request, file_read, file_write, image_reader,
+        load_tool, mem0_memory, python_repl, stop, swarm, think, workflow, 
+        weather_forecast, use_openrouter_llm
     ]
