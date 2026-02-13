@@ -5,14 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendButton');
     // user/session controls removed
-    const systemPromptInput = document.getElementById('systemPrompt');
-    const setSystemPromptButton = document.getElementById('setSystemPrompt');
-    const modelIdInput = document.getElementById('modelId');
-    const regionInput = document.getElementById('region');
-    const maxTokensInput = document.getElementById('maxTokens');
-    const temperatureInput = document.getElementById('temperature');
-    const topPInput = document.getElementById('topP');
-    const updateModelSettingsButton = document.getElementById('updateModelSettings');
+    // system prompt + model settings panels removed
 
     // Defensive: if the markup is customized, avoid hard crashes.
     if (!chatMessages || !userInput || !sendButton) {
@@ -24,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_BASE_URL = '';
     const GET_CONVERSATIONS_ENDPOINT = `${API_BASE_URL}/get_conversations`;
     const CS_AGENT_ENDPOINT = `${API_BASE_URL}/strandsplayground_agent`;
+    // endpoints kept (backend supports them), but UI no longer exposes controls.
     const SYSTEM_PROMPT_ENDPOINT = `${API_BASE_URL}/system_prompt`;
     const MODEL_SETTINGS_ENDPOINT = `${API_BASE_URL}/model_settings`;
     
@@ -31,10 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let userId = 'user1';
     let isProcessing = false;
     
-    // Initialize chat, system prompt, and model settings
+    // Initialize chat
     loadConversation();
-    loadSystemPrompt();
-    loadModelSettings();
     
     // Event Listeners
     sendButton.addEventListener('click', sendMessage);
@@ -44,82 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
             sendMessage();
         }
     });
-    
-    
+
+
     // User/session switching removed; fixed userId = 'user1'
-    
-    if (setSystemPromptButton && systemPromptInput) setSystemPromptButton.addEventListener('click', async () => {
-        const systemPrompt = systemPromptInput.value.trim();
-        if (systemPrompt) {
-            try {
-                const response = await fetch(SYSTEM_PROMPT_ENDPOINT, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        systemPrompt: systemPrompt
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                
-                showSuccess('System prompt updated successfully');
-            } catch (error) {
-                console.error('Error setting system prompt:', error);
-                showError('Failed to update system prompt. Please try again.');
-            }
-        } else {
-            showError('Please enter a valid system prompt');
-        }
-    });
-    
-    if (updateModelSettingsButton && modelIdInput && regionInput) updateModelSettingsButton.addEventListener('click', async () => {
-        const modelId = modelIdInput.value.trim();
-        const region = regionInput.value.trim();
-        
-        // Check if optional fields are enabled
-        const maxTokensEnabled = document.getElementById('enableMaxTokens').checked;
-        const temperatureEnabled = document.getElementById('enableTemperature').checked;
-        const topPEnabled = document.getElementById('enableTopP').checked;
-        
-        // Get values only from enabled fields
-        const maxTokens = maxTokensEnabled ? parseInt(maxTokensInput.value.trim()) : null;
-        const temperature = temperatureEnabled ? parseFloat(temperatureInput.value.trim()) : null;
-        const topP = topPEnabled ? parseFloat(topPInput.value.trim()) : null;
-        
-        if (!modelId || !region) {
-            showError('Model ID and Region are required');
-            return;
-        }
-        
-        try {
-            const response = await fetch(MODEL_SETTINGS_ENDPOINT, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    modelId,
-                    region,
-                    maxTokens: maxTokensEnabled ? (isNaN(maxTokens) ? null : maxTokens) : null,
-                    temperature: temperatureEnabled ? (isNaN(temperature) ? null : temperature) : null,
-                    topP: topPEnabled ? (isNaN(topP) ? null : topP) : null
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            
-            showSuccess('Model settings updated successfully');
-        } catch (error) {
-            console.error('Error updating model settings:', error);
-            showError('Failed to update model settings. Please try again.');
-        }
-    });
     
     // Functions
     async function loadConversation() {
@@ -248,66 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
-    async function loadSystemPrompt() {
-        try {
-            const response = await fetch(SYSTEM_PROMPT_ENDPOINT);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            systemPromptInput.value = data.systemPrompt;
-        } catch (error) {
-            console.error('Error loading system prompt:', error);
-            showError('Failed to load system prompt. Please try again.');
-        }
-    }
-    
-    async function loadModelSettings() {
-        try {
-            const response = await fetch(MODEL_SETTINGS_ENDPOINT);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            modelIdInput.value = data.modelId || '';
-            regionInput.value = data.region || '';
-            
-            // Set values and toggle states for optional fields
-            if (data.maxTokens !== null && data.maxTokens !== undefined) {
-                maxTokensInput.value = data.maxTokens;
-                document.getElementById('enableMaxTokens').checked = true;
-                maxTokensInput.disabled = false;
-            } else {
-                document.getElementById('enableMaxTokens').checked = false;
-                maxTokensInput.disabled = true;
-            }
-            
-            if (data.temperature !== null && data.temperature !== undefined) {
-                temperatureInput.value = data.temperature;
-                document.getElementById('enableTemperature').checked = true;
-                temperatureInput.disabled = false;
-            } else {
-                document.getElementById('enableTemperature').checked = false;
-                temperatureInput.disabled = true;
-            }
-            
-            if (data.topP !== null && data.topP !== undefined) {
-                topPInput.value = data.topP;
-                document.getElementById('enableTopP').checked = true;
-                topPInput.disabled = false;
-            } else {
-                document.getElementById('enableTopP').checked = false;
-                topPInput.disabled = true;
-            }
-        } catch (error) {
-            console.error('Error loading model settings:', error);
-            showError('Failed to load model settings. Please try again.');
-        }
-    }
+    // System prompt + model settings panels removed
     
     function showError(message) {
         const errorDiv = document.createElement('div');
