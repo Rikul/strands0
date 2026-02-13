@@ -13,6 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const temperatureInput = document.getElementById('temperature');
     const topPInput = document.getElementById('topP');
     const updateModelSettingsButton = document.getElementById('updateModelSettings');
+
+    // Defensive: if the markup is customized, avoid hard crashes.
+    if (!chatMessages || !userInput || !sendButton) {
+        console.error('Missing core chat UI elements.');
+        return;
+    }
     
     // API endpoints
     const API_BASE_URL = '';
@@ -42,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // User/session switching removed; fixed userId = 'user1'
     
-    setSystemPromptButton.addEventListener('click', async () => {
+    if (setSystemPromptButton && systemPromptInput) setSystemPromptButton.addEventListener('click', async () => {
         const systemPrompt = systemPromptInput.value.trim();
         if (systemPrompt) {
             try {
@@ -70,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    updateModelSettingsButton.addEventListener('click', async () => {
+    if (updateModelSettingsButton && modelIdInput && regionInput) updateModelSettingsButton.addEventListener('click', async () => {
         const modelId = modelIdInput.value.trim();
         const region = regionInput.value.trim();
         
