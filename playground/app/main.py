@@ -60,6 +60,28 @@ def weather_forecast(city: str, days: int = 3) -> str:
     """
     return f"Weather forecast for {city} for the next {days} days..."
 
+
+@tool
+def use_openrouter_llm(prompt: str, system_prompt: str) -> str:
+    """Run a one-off nested agent using the OpenRouter (OpenAI-compatible) provider.
+
+    This is a playground-friendly replacement for `strands_tools.use_llm`, which
+    otherwise creates `Agent()` without an explicit model and can fall back to
+    Bedrock.
+
+    Args:
+        prompt: The user prompt to run.
+        system_prompt: System prompt for the nested agent.
+    """
+    agent = Agent(
+        model=OPENAI_MODEL,
+        system_prompt=system_prompt,
+        tools=list(tools),
+        messages=[],
+    )
+    result = agent(prompt)
+    return str(result)
+
 # Define all available tools
 available_tools = {
     'agent_graph': agent_graph,
@@ -88,6 +110,7 @@ available_tools = {
     'think': think,
     'use_aws': use_aws,
     'use_llm': use_llm,
+    'use_openrouter_llm': use_openrouter_llm,
     'workflow': workflow,
     'weather_forecast': weather_forecast,
 }
@@ -119,7 +142,8 @@ tool_descriptions = {
     'swarm': 'Create and coordinate a swarm of AI agents for parallel processing and collective intelligence',
     'think': 'Process thoughts through multiple recursive cycles',
     'use_aws': 'Execute AWS service operations using boto3',
-    'use_llm': 'Create isolated agent instances for specific tasks',
+    'use_llm': 'Create isolated agent instances for specific tasks (may default to Bedrock if model not provided)',
+    'use_openrouter_llm': 'Create isolated agent instances for specific tasks using OpenRouter (OpenAI-compatible)',
     'workflow': 'Advanced workflow orchestration system for parallel AI task execution',
     'weather_forecast': 'Return a dummy weather for the input city and day, used to showcase inline python tool for Strands'
 }
