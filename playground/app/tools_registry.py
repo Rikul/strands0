@@ -133,4 +133,4 @@ def tool_descriptions() -> dict[str, str]:
 
 def default_selected_tools() -> list[Any]:
     # Keep defaults conservative.
-    return [calculator, http_request, use_aws]
+    return [calculator, cron, current_time, editor, environment, file_read, file_write, http_request, image_reader, journal, load_tool, mem0_memory, python_repl, shell, stop, swarm, think, workflow, weather_forecast, use_openrouter_llm]
